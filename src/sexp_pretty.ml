@@ -39,53 +39,6 @@ type content_kind =
 type state = { content_kind : content_kind }
 
 let start_state = { content_kind = Sexp }
-let split = lazy (Re.Str.regexp "[ \t]+")
-
-let color_to_code = function
-  | Black -> 30
-  | Red -> 31
-  | Green -> 32
-  | Yellow -> 33
-  | Blue -> 34
-  | Magenta -> 35
-  | Cyan -> 36
-  | White -> 37
-  | Default -> 39
-;;
-
-let rainbow_open_tag conf tag =
-  let args = Re.Str.split (force split) tag in
-  let color_count = Array.length conf.color_scheme in
-  match args with
-  | [ "d"; n ] ->
-    let i = Int.of_string n in
-    "["
-    ^ Int.to_string
-        (color_to_code
-           (if i < 0 || color_count < 1
-            then Default
-            else conf.color_scheme.(i % color_count)))
-    ^ "m"
-  (* Printing out comments. *)
-  | [ "c"; _ ] ->
-    (match conf.comments with
-     | Print (_, Some clr, _) -> "[" ^ Int.to_string (color_to_code clr) ^ "m"
-     | _ -> "")
-  | _ -> tag
-;;
-
-let rainbow_tags conf =
-  { Format.mark_open_tag =
-      rainbow_open_tag conf
-  ; Format.mark_close_tag =
-      (fun _ ->
-         match conf.comments with
-         | Print (_, Some _clr, _) -> ""
-         | _ -> "")
-  ; Format.print_open_tag = ignore
-  ; Format.print_close_tag = ignore
-  }
-;;
 
 (* Opens n parentheses, starting at level depth. *)
 let open_parens conf state ~depth fmt n =
@@ -1075,8 +1028,7 @@ module Print = struct
   ;;
 end
 
-let setup conf fmt =
-  Format.pp_set_formatter_tag_functions fmt (rainbow_tags conf) [@ocaml.warning "-3"];
+let setup _conf fmt =
   Format.pp_set_tags fmt true
 ;;
 
